@@ -1,14 +1,22 @@
+using System;
 using UnityEngine;
 
 public class PlayerController : MonoBehaviour
 {
+    //Variables
+    public GameObject kunaiPrefab;
+    public int kunaisDisponibles = 5;
+
     Rigidbody2D rb;
     SpriteRenderer sr;
     Animator animator;
+
+    private String direccion = "Derecha";
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     private bool puedeMoverseVerticalMente = false;
     private float defaultGravityScale = 1f;
     private bool puedeSaltar = true;
+    private bool puedeLanzarKunai = true;
     void Start()
     {
         Debug.Log("INICIANDO PLAYER CONTROLLER");
@@ -24,14 +32,17 @@ public class PlayerController : MonoBehaviour
     {
         
         SetupMoverseHorizontal();
-        SetupSalto();
         SetupMoverVertical();
+        SetupSalto();
+        SetUpLanzarKunai();
     }
+
 
     //coliciones sem05
     void OnCollisionEnter2D(Collision2D collision)
     {
-        if (collision.gameObject.CompareTag("Enemigo")){
+        if (collision.gameObject.CompareTag("Enemigo"))
+        {
             MaleZombieController zombie = collision.gameObject.GetComponent<MaleZombieController>();
             Debug.Log($"Colision con el enemigo: {zombie.puntosVida}");
             Destroy(collision.gameObject);
@@ -59,16 +70,19 @@ public class PlayerController : MonoBehaviour
     {
         rb.linearVelocityX = 0;
         animator.SetInteger("Estado", 0);
+
         if (Input.GetKey(KeyCode.RightArrow))
         {
             rb.linearVelocityX = 10;
             sr.flipX = false;
+            direccion ="Derecha";
             animator.SetInteger("Estado", 1);
         }
         if (Input.GetKey(KeyCode.LeftArrow))
         {
             rb.linearVelocityX = -10;
             sr.flipX = true;
+            direccion ="Izquierda";
             animator.SetInteger("Estado", 1);
         }
 
@@ -98,5 +112,16 @@ public class PlayerController : MonoBehaviour
         }
     }
 
+    void SetUpLanzarKunai() {
+        if (!puedeLanzarKunai || kunaisDisponibles <= 0) return;
+        if(Input.GetKeyUp(KeyCode.K))
+        {
+            GameObject kunai = Instantiate(kunaiPrefab,transform.position, Quaternion.Euler(0, 0, -90));
+            kunai.GetComponent<KunaiController>().SetDirection(direccion);
+            kunaisDisponibles -=1;
+        }
+    }
+
+    
     
 }
