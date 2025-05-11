@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class PlayerController : MonoBehaviour
 {
@@ -10,6 +11,7 @@ public class PlayerController : MonoBehaviour
     Rigidbody2D rb;
     SpriteRenderer sr;
     Animator animator;
+    
 
     private String direccion = "Derecha";
     // Start is called once before the first execution of Update after the MonoBehaviour is created
@@ -17,12 +19,18 @@ public class PlayerController : MonoBehaviour
     private float defaultGravityScale = 1f;
     private bool puedeSaltar = true;
     private bool puedeLanzarKunai = true;
+
+    public int Vidas;
+    public Text vidasText;
     void Start()
     {
         Debug.Log("INICIANDO PLAYER CONTROLLER");
         rb = GetComponent<Rigidbody2D>();
         sr = GetComponent<SpriteRenderer>();
         animator = GetComponent<Animator>();
+        Vidas = 2;
+        vidasText = GameObject.Find("VidasText").GetComponent<Text>();
+        vidasText.text= "VIDAS: "+ Vidas;
 
         defaultGravityScale = rb.gravityScale;
     }
@@ -43,8 +51,12 @@ public class PlayerController : MonoBehaviour
     {
         if (collision.gameObject.CompareTag("Enemigo"))
         {
+           
+            
             MaleZombieController zombie = collision.gameObject.GetComponent<MaleZombieController>();
             Debug.Log($"Colision con el enemigo: {zombie.puntosVida}");
+             Vidas--;
+             vidasText.text = "VIDAS: " + Vidas;
             Destroy(collision.gameObject);
         }
     }
