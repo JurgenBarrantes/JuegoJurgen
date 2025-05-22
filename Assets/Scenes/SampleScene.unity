@@ -1382,10 +1382,22 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1b9b230f572b68845b0bdeb9da5cc925, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  disparoClip: {fileID: 8300000, guid: 4a064e79e46d7f5428d209781ab197b3, type: 3}
+  saltoClip: {fileID: 8300000, guid: c2fc4aa957cb16b4eb96b4d1454a0d27, type: 3}
+  velocidad: 10
+  fuerzaSalto: 12.5
   kunaiPrefab: {fileID: 4165240657430036824, guid: de73c1930818b0b4b9329a83914251f8, type: 3}
   kunaisDisponibles: 5
-  Vidas: 0
-  vidasText: {fileID: 116136769}
+  groundCheck: {fileID: 3276360742707766454, guid: de73c1930818b0b4b9329a83914251f8, type: 3}
+  groundLayer:
+    serializedVersion: 2
+    m_Bits: 1
+  audioSource: {fileID: 1493099155}
+  jumpForce: 10
+  fallMultiplier: 2.5
+  lowJumpMultiplier: 2
+  coyoteTime: 0.2
+  jumpBufferTime: 0.2
 --- !u!1 &823089037
 GameObject:
   m_ObjectHideFlags: 0

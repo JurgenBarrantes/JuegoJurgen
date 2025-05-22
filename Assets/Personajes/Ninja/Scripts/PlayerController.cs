@@ -5,14 +5,25 @@ using UnityEngine.UI;
 public class PlayerController : MonoBehaviour
 {
     //Variables
+    public AudioClip disparoClip;
+    public AudioClip saltoClip;
+
+    public float velocidad = 10f;
+    public float fuerzaSalto = 12.5f;
+
     public GameObject kunaiPrefab;
     public int kunaisDisponibles = 5;
+
+    public Transform groundCheck;
+    public LayerMask groundLayer;
+    public AudioSource audioSource;
 
     Rigidbody2D rb;
     SpriteRenderer sr;
     Animator animator;
-    
 
+
+    private bool isGrounded = true;
     private String direccion = "Derecha";
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     private bool puedeMoverseVerticalMente = false;
@@ -20,17 +31,29 @@ public class PlayerController : MonoBehaviour
     private bool puedeSaltar = true;
     private bool puedeLanzarKunai = true;
 
-    public int Vidas;
-    public Text vidasText;
+    [Header("Parámetros de salto")]
+    public float jumpForce = 10f;
+    public float fallMultiplier = 2.5f;
+    public float lowJumpMultiplier = 2f;
+
+    [Header("Coyote Time")]
+    public float coyoteTime = 0.2f;
+    private float coyoteTimeCounter;
+
+    [Header("Jump Buffer")]
+    public float jumpBufferTime = 0.2f;
+    private float jumpBufferCounter;
+
+    private Text enemigosMuertosText;
+
     void Start()
     {
         Debug.Log("INICIANDO PLAYER CONTROLLER");
+
         rb = GetComponent<Rigidbody2D>();
         sr = GetComponent<SpriteRenderer>();
         animator = GetComponent<Animator>();
-        Vidas = 2;
-        vidasText = GameObject.Find("VidasText").GetComponent<Text>();
-        vidasText.text= "VIDAS: "+ Vidas;
+        audioSource = GetComponent<AudioSource>();
 
         defaultGravityScale = rb.gravityScale;
     }
@@ -38,7 +61,7 @@ public class PlayerController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        
+
         SetupMoverseHorizontal();
         SetupMoverVertical();
         SetupSalto();
@@ -51,12 +74,8 @@ public class PlayerController : MonoBehaviour
     {
         if (collision.gameObject.CompareTag("Enemigo"))
         {
-           
-            
             MaleZombieController zombie = collision.gameObject.GetComponent<MaleZombieController>();
-            Debug.Log($"Colision con el enemigo: {zombie.puntosVida}");
-             Vidas--;
-             vidasText.text = "VIDAS: " + Vidas;
+            Debug.Log($"Colision con Enemigo: ${zombie.puntosVida}");
             Destroy(collision.gameObject);
         }
     }
@@ -64,15 +83,17 @@ public class PlayerController : MonoBehaviour
     void OnTriggerStay2D(Collider2D other)
     {
         Debug.Log($"Triggera con: {other.gameObject.name}");
-        if(other.gameObject.name == "Muro"){
-            puedeMoverseVerticalMente= true;
+        if (other.gameObject.name == "Muro")
+        {
+            puedeMoverseVerticalMente = true;
         }
     }
 
     void OnTriggerExit2D(Collider2D other)
     {
         Debug.Log($"Trigger con: {other.gameObject.name}");
-        if (other.gameObject.name == "Muro") {
+        if (other.gameObject.name == "Muro")
+        {
             puedeMoverseVerticalMente = false;
             rb.gravityScale = defaultGravityScale;
         }
@@ -80,60 +101,112 @@ public class PlayerController : MonoBehaviour
 
     void SetupMoverseHorizontal()
     {
+        if (isGrounded && rb.linearVelocityY == 0)
+        {
+            animator.SetInteger("Estado", 0);
+        }
+
         rb.linearVelocityX = 0;
-        animator.SetInteger("Estado", 0);
 
         if (Input.GetKey(KeyCode.RightArrow))
         {
-            rb.linearVelocityX = 10;
+            rb.linearVelocityX = velocidad;
             sr.flipX = false;
-            direccion ="Derecha";
-            animator.SetInteger("Estado", 1);
+            direccion = "Derecha";
+            if (isGrounded && rb.linearVelocityY == 0)
+                animator.SetInteger("Estado", 1);
         }
         if (Input.GetKey(KeyCode.LeftArrow))
         {
-            rb.linearVelocityX = -10;
+            rb.linearVelocityX = -velocidad;
             sr.flipX = true;
-            direccion ="Izquierda";
-            animator.SetInteger("Estado", 1);
+            direccion = "Izquierda";
+            if (isGrounded && rb.linearVelocityY == 0)
+                animator.SetInteger("Estado", 1);
         }
 
     }
     void SetupMoverVertical()
     {
-        if(!puedeMoverseVerticalMente) return;
-        
+        if (!puedeMoverseVerticalMente) return;
+
         rb.gravityScale = 0;
         rb.linearVelocityY = 0;
         if (Input.GetKey(KeyCode.UpArrow))
         {
-            rb.linearVelocityY = 10;
+            rb.linearVelocityY = velocidad;
         }
-        if(Input.GetKey(KeyCode.DownArrow))
+        if (Input.GetKey(KeyCode.DownArrow))
         {
-                rb.linearVelocityY = -10;
+            rb.linearVelocityY = -velocidad;
         }
-        
+
     }
     void SetupSalto()
     {
-        if (!puedeSaltar) return;
-        if (Input.GetKeyUp(KeyCode.Space))
+        bool isGrounded = Physics2D.OverlapCircle(groundCheck.position, 0.1f, groundLayer);
+
+        // ---Coyote Time ---
+        if (isGrounded)
         {
-            rb.linearVelocityY = 12.5f;
+            coyoteTimeCounter = coyoteTime;
+        }
+        else
+        {
+            coyoteTimeCounter -= Time.deltaTime;
+            if (rb.linearVelocityY > 5f)
+                animator.SetInteger("Estado", 3);
+
+        }
+
+        //--- Jump Buffer ---
+        if (Input.GetButtonDown("Jump"))
+        {
+            jumpBufferCounter = jumpBufferTime;
+        }
+        else
+        {
+            jumpBufferCounter -= Time.deltaTime;
+        }
+
+        //---Ejecutar salto ---
+        if (jumpBufferCounter > 0f && coyoteTimeCounter > 0f)
+        {
+            rb.linearVelocityY = jumpForce;
+            jumpBufferCounter = 0f;
+        }
+
+        // ---Ajuste de gravedad para caida más rápida ---
+        if (rb.linearVelocityY < 0)
+        {
+            rb.linearVelocity += Vector2.up * Physics2D.gravity * (fallMultiplier - 1f) * Time.deltaTime;
+        }
+        else if (rb.linearVelocityY > 0 && !Input.GetButton("Jump"))
+        {
+            rb.linearVelocity += Vector2.up * Physics2D.gravity.y * (lowJumpMultiplier - 1f) * Time.deltaTime;
         }
     }
 
-    void SetUpLanzarKunai() {
+    void SetUpLanzarKunai()
+    {
         if (!puedeLanzarKunai || kunaisDisponibles <= 0) return;
-        if(Input.GetKeyUp(KeyCode.K))
+        if (Input.GetKeyUp(KeyCode.K))
         {
-            GameObject kunai = Instantiate(kunaiPrefab,transform.position, Quaternion.Euler(0, 0, -90));
+            GameObject kunai = Instantiate(kunaiPrefab, transform.position, Quaternion.Euler(0, 0, -90));
             kunai.GetComponent<KunaiController>().SetDirection(direccion);
-            kunaisDisponibles -=1;
+            kunaisDisponibles -= 1;
+            //ejecutar sonido
+            audioSource.PlayOneShot(disparoClip);
         }
     }
 
-    
-    
+    //Visualiza el groundCheck en el editor
+    void OnDrawGizmosSelected()
+    {
+        if (groundCheck != null)
+        {
+            Gizmos.color = Color.red;
+            Gizmos.DrawWireSphere(groundCheck.position, 0.1f);
+        }
+    }    
 }
