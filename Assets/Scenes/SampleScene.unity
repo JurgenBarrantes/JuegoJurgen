@@ -483,7 +483,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: de4311711c4a64649afe7c0e4e83efdc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  puntosVida: 2
+  puntosVida: 3
 --- !u!1 &317976039
 GameObject:
   m_ObjectHideFlags: 0
@@ -1387,7 +1387,7 @@ MonoBehaviour:
   velocidad: 10
   fuerzaSalto: 12.5
   kunaiPrefab: {fileID: 4165240657430036824, guid: de73c1930818b0b4b9329a83914251f8, type: 3}
-  kunaisDisponibles: 5
+  kunaisDisponibles: 10
   groundCheck: {fileID: 3276360742707766454, guid: de73c1930818b0b4b9329a83914251f8, type: 3}
   groundLayer:
     serializedVersion: 2
@@ -2394,7 +2394,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: de4311711c4a64649afe7c0e4e83efdc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  puntosVida: 1
+  puntosVida: 3
 --- !u!1 &1566831022
 GameObject:
   m_ObjectHideFlags: 0

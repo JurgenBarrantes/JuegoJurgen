@@ -8,7 +8,7 @@ public class KunaiController : MonoBehaviour
     GameRepository gameRepository;
     GameData gameData;
     //private static bool puntosIniciados = false;  // Se asegura de iniciar solo una vez
-
+    private int damage = 1;
     void Start()
     {
         gameRepository = GameRepository.GetInstance();
@@ -17,7 +17,7 @@ public class KunaiController : MonoBehaviour
         gameData = gameRepository.GetData();
 
         Destroy(this.gameObject, 5f);
-        
+
     }
 
     void Update()
@@ -41,17 +41,27 @@ public class KunaiController : MonoBehaviour
         {
             //Puntos++;
             //puntosText.text = "PUNTOS: "+ Puntos;
-            Destroy(collision.gameObject);
+            MaleZombieController enemy = collision.gameObject.GetComponent<MaleZombieController>();
+            if (enemy != null)
+            {
+                enemy.TakeDamage(damage);
+            }
+            //Destroy(collision.gameObject);
             Destroy(this.gameObject);
 
-            gameData.enemigosMuertos++;
+            //gameData.enemigosMuertos++;
             gameRepository.SaveData();
-            
+
         }
     }
 
     public void SetDirection(string direction)
     {
         this.direccion = direction;
+    }
+
+    public void SetDamage(int dmg)
+    {
+        this.damage = dmg;
     }
 }

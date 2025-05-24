@@ -30,16 +30,18 @@ public class GameRepository
 
         if (File.Exists(path))
         {
-            return new GameData();
+            //return new GameData();
+            FileStream file = File.OpenRead(path);
+
+            BinaryFormatter bf = new BinaryFormatter();
+            gameData = (GameData)bf.Deserialize(file);
+
+            file.Close();
         }
-
-        FileStream file = File.OpenRead(path);
-
-        BinaryFormatter bf = new BinaryFormatter();
-        gameData = (GameData)bf.Deserialize(file);
-
-        file.Close();
-
+        else
+        {
+            gameData = new GameData();
+        }
         return gameData;
     }
 

@@ -1,4 +1,5 @@
 using System;
+using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -12,7 +13,7 @@ public class PlayerController : MonoBehaviour
     public float fuerzaSalto = 12.5f;
 
     public GameObject kunaiPrefab;
-    public int kunaisDisponibles = 5;
+    public int kunaisDisponibles = 10;
 
     public Transform groundCheck;
     public LayerMask groundLayer;
@@ -45,6 +46,8 @@ public class PlayerController : MonoBehaviour
     private float jumpBufferCounter;
 
     private Text enemigosMuertosText;
+    private float kunaiPressStartTime = 0f;
+    private bool isPressingKunai = false;
 
     void Start()
     {
@@ -190,13 +193,40 @@ public class PlayerController : MonoBehaviour
     void SetUpLanzarKunai()
     {
         if (!puedeLanzarKunai || kunaisDisponibles <= 0) return;
-        if (Input.GetKeyUp(KeyCode.K))
+        if (Input.GetKeyDown(KeyCode.K))
         {
+            kunaiPressStartTime = Time.time;
+            isPressingKunai = true;
+        }
+
+        if (Input.GetKeyUp(KeyCode.K) && isPressingKunai)
+        {
+            float presDuration = Time.time - kunaiPressStartTime;
+            int damage = 1;
+            Vector3 scale = Vector3.one;
+
+            if (presDuration >= 5f)
+            {
+                damage = 3;
+                scale = new Vector3(4f, 4f, 4f);
+            }
+            else if (presDuration >= 2f)
+            {
+                damage = 2;
+                scale = new Vector3(2f, 2f, 2f);
+            }
+
+
             GameObject kunai = Instantiate(kunaiPrefab, transform.position, Quaternion.Euler(0, 0, -90));
-            kunai.GetComponent<KunaiController>().SetDirection(direccion);
-            kunaisDisponibles -= 1;
+            kunai.transform.localScale = scale;
+            //kunai.GetComponent<KunaiController>().SetDirection(direccion);
+            KunaiController controller = kunai.GetComponent<KunaiController>();
+            controller.SetDirection(direccion);
+            controller.SetDamage(damage);
+            kunaisDisponibles --;
             //ejecutar sonido
             audioSource.PlayOneShot(disparoClip);
+            isPressingKunai = false;
         }
     }
 
