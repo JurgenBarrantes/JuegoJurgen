@@ -7,11 +7,18 @@ public class CameraController : MonoBehaviour
     void Start()
     {
         player = GameObject.Find("NinjaPlayer");
+        
+        
     }
 
     // Update is called once per frame
     void Update()
     {
+        if (player == null)
+    {
+        //Debug.LogWarning("Player no asignado o no encontrado");
+        return;
+    }
         float positionX = player.transform.position.x;
         float positionY = player.transform.position.y;
         float positionZ = transform.position.z;

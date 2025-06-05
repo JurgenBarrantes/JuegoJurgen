@@ -1,5 +1,3 @@
-using System;
-using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -13,7 +11,7 @@ public class PlayerController : MonoBehaviour
     public float fuerzaSalto = 12.5f;
 
     public GameObject kunaiPrefab;
-    public int kunaisDisponibles = 10;
+    public int kunaisDisponibles = 5;
 
     public Transform groundCheck;
     public LayerMask groundLayer;
@@ -25,8 +23,7 @@ public class PlayerController : MonoBehaviour
 
 
     private bool isGrounded = true;
-    private String direccion = "Derecha";
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
+    private string direccion = "Derecha";
     private bool puedeMoverseVerticalMente = false;
     private float defaultGravityScale = 1f;
     private bool puedeSaltar = true;
@@ -46,8 +43,6 @@ public class PlayerController : MonoBehaviour
     private float jumpBufferCounter;
 
     private Text enemigosMuertosText;
-    private float kunaiPressStartTime = 0f;
-    private bool isPressingKunai = false;
 
     void Start()
     {
@@ -69,6 +64,7 @@ public class PlayerController : MonoBehaviour
         SetupMoverVertical();
         SetupSalto();
         SetUpLanzarKunai();
+        SetUpDeslizar();
     }
 
 
@@ -110,7 +106,6 @@ public class PlayerController : MonoBehaviour
         }
 
         rb.linearVelocityX = 0;
-
         if (Input.GetKey(KeyCode.RightArrow))
         {
             rb.linearVelocityX = velocidad;
@@ -147,9 +142,15 @@ public class PlayerController : MonoBehaviour
     }
     void SetupSalto()
     {
+        if (groundCheck == null)
+        {
+            Debug.LogError("groundCheck no está asignado en el Inspector.");
+            return;
+        }
+
         bool isGrounded = Physics2D.OverlapCircle(groundCheck.position, 0.1f, groundLayer);
 
-        // ---Coyote Time ---
+        // --- Coyote Time ---
         if (isGrounded)
         {
             coyoteTimeCounter = coyoteTime;
@@ -162,71 +163,46 @@ public class PlayerController : MonoBehaviour
 
         }
 
-        //--- Jump Buffer ---
+
+
+
+        // --- Jump Buffer ---
         if (Input.GetButtonDown("Jump"))
         {
             jumpBufferCounter = jumpBufferTime;
         }
         else
-        {
             jumpBufferCounter -= Time.deltaTime;
-        }
 
-        //---Ejecutar salto ---
+        // --- Ejecutar salto ---
         if (jumpBufferCounter > 0f && coyoteTimeCounter > 0f)
         {
             rb.linearVelocityY = jumpForce;
             jumpBufferCounter = 0f;
         }
 
-        // ---Ajuste de gravedad para caida más rápida ---
+        // --- Ajuste de gravedad para caída más rápida ---
         if (rb.linearVelocityY < 0)
         {
-            rb.linearVelocity += Vector2.up * Physics2D.gravity * (fallMultiplier - 1f) * Time.deltaTime;
+            rb.linearVelocity += Vector2.up * Physics2D.gravity.y * (fallMultiplier - 1f) * Time.deltaTime;
         }
         else if (rb.linearVelocityY > 0 && !Input.GetButton("Jump"))
         {
             rb.linearVelocity += Vector2.up * Physics2D.gravity.y * (lowJumpMultiplier - 1f) * Time.deltaTime;
+
         }
     }
 
     void SetUpLanzarKunai()
     {
         if (!puedeLanzarKunai || kunaisDisponibles <= 0) return;
-        if (Input.GetKeyDown(KeyCode.K))
+        if (Input.GetKeyUp(KeyCode.K))
         {
-            kunaiPressStartTime = Time.time;
-            isPressingKunai = true;
-        }
-
-        if (Input.GetKeyUp(KeyCode.K) && isPressingKunai)
-        {
-            float presDuration = Time.time - kunaiPressStartTime;
-            int damage = 1;
-            Vector3 scale = Vector3.one;
-
-            if (presDuration >= 5f)
-            {
-                damage = 3;
-                scale = new Vector3(4f, 4f, 4f);
-            }
-            else if (presDuration >= 2f)
-            {
-                damage = 2;
-                scale = new Vector3(2f, 2f, 2f);
-            }
-
-
             GameObject kunai = Instantiate(kunaiPrefab, transform.position, Quaternion.Euler(0, 0, -90));
-            kunai.transform.localScale = scale;
-            //kunai.GetComponent<KunaiController>().SetDirection(direccion);
-            KunaiController controller = kunai.GetComponent<KunaiController>();
-            controller.SetDirection(direccion);
-            controller.SetDamage(damage);
-            kunaisDisponibles --;
-            //ejecutar sonido
+            kunai.GetComponent<KunaiController>().SetDirection(direccion);
+            kunaisDisponibles -= 1;
+            // ejecutar sonido
             audioSource.PlayOneShot(disparoClip);
-            isPressingKunai = false;
         }
     }
 
@@ -238,5 +214,13 @@ public class PlayerController : MonoBehaviour
             Gizmos.color = Color.red;
             Gizmos.DrawWireSphere(groundCheck.position, 0.1f);
         }
-    }    
+    }
+
+    void SetUpDeslizar()
+    {
+        if (Input.GetKey(KeyCode.G))
+        {
+            animator.SetInteger("Estado", 4);
+        }
+    }  
 }

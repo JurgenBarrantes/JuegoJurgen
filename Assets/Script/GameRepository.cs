@@ -1,11 +1,12 @@
 using System.IO;
 using System.Runtime.Serialization.Formatters.Binary;
-using System.Collections;
 using UnityEngine;
 
 public class GameRepository
 {
     static GameRepository instance;
+    private static readonly object fileLock = new object();
+
     GameData gameData;
 
     public static GameRepository GetInstance()
@@ -28,39 +29,52 @@ public class GameRepository
 
         string path = Application.persistentDataPath + "/data.save";
 
-        if (File.Exists(path))
+        lock (fileLock)
         {
-            //return new GameData();
-            FileStream file = File.OpenRead(path);
+            if (File.Exists(path))
+            {
+                try
+                {
+                    using (FileStream file = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read))
+                    {
+                        BinaryFormatter bf = new BinaryFormatter();
+                        gameData = (GameData)bf.Deserialize(file);
+                    }
+                }
+                catch (System.Exception e)
+                {
+                    Debug.LogError("Error al leer data.save: " + e.Message);
+                    gameData = new GameData(); // fallback seguro
+                }
+            }
+            else
+            {
+                gameData = new GameData();
+            }
 
-            BinaryFormatter bf = new BinaryFormatter();
-            gameData = (GameData)bf.Deserialize(file);
-
-            file.Close();
+            return gameData;
         }
-        else
-        {
-            gameData = new GameData();
-        }
-        return gameData;
     }
 
     public void SaveData()
     {
         string path = Application.persistentDataPath + "/data.save";
-        FileStream file = null;
-        if (File.Exists(path))
-        {
-            file = File.OpenWrite(path);
-        }
-        else
-        {
-            file = File.Create(path);
-        }
 
-        BinaryFormatter bf = new BinaryFormatter();
-        bf.Serialize(file, gameData);
-        file.Close();
-    } 
+        lock (fileLock)
+        {
+            try
+            {
+                using (FileStream file = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.None))
+                {
+                    BinaryFormatter bf = new BinaryFormatter();
+                    bf.Serialize(file, gameData);
+                }
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError("Error al guardar data.save: " + e.Message);
+            }
+        }
+    }
 }
 
